@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% block title %}Главная{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="page-title">Привет, {{ user.display_name }}</div>
+    <div class="subtitle">Ваши команды, активные опросы и последние уведомления</div>
+  </div>
+  <div style="display:flex;gap:8px;">
+    <a href="{{ url_for('teams.create_team') }}" class="btn btn-primary">+ Создать команду</a>
+    <a href="{{ url_for('teams.list_teams') }}" class="btn btn-secondary">Все команды</a>
+  </div>
+</div>
+
+<div class="grid-2">
+  <div class="card">
+    <div class="card-title">Мои команды и чаты</div>
+    {% if my_teams %}
+      <div class="members-list">
+        {% for item in my_teams %}
+          {% set team = item.team %}
+          {% set role = item.membership.role %}
+          <a class="member-row" style="text-decoration:none;color:inherit;" href="{{ url_for('teams.team_detail', team_id=team.id) }}">
+            <span style="display:flex;align-items:center;gap:10px;min-width:0;">
+              <span class="avatar">{{ team.name[:1] }}</span>
+              <span style="font-weight:600;">{{ team.name }}</span>
+            </span>
+            <span class="badge {{ 'badge-leader' if role == 'leader' else 'badge-member' }}">
+              {{ 'Лидер' if role == 'leader' else 'Участник' }}
+            </span>
+          </a>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="empty-state">
+        Вы пока не состоите ни в одной команде.<br>
+        <a class="muted-link" href="{{ url_for('teams.list_teams') }}">Найдите команду</a> или создайте свою.
+      </div>
+    {% endif %}
+  </div>
+
+  <div class="card">
+    <div class="card-title">Активные DISC-опросы</div>
+    {% if active_surveys %}
+      <div class="members-list">
+        {% for s in active_surveys %}
+          <div class="member-row" style="flex-direction:column;align-items:stretch;gap:6px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;">
+              <span style="font-weight:600;">{{ s.ts.survey_snapshot.title }}</span>
+              <span class="badge badge-active">{% if s.ts.deadline %}до {{ s.ts.deadline.strftime('%d.%m %H:%M') }}{% else %}без дедлайна{% endif %}</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;">
+              <span class="small muted">Команда «{{ s.team.name }}» · прошли {{ s.responded }}/{{ s.total }}</span>
+              {% if s.answered_by_me %}
+                <span class="badge badge-finished">Вы прошли</span>
+              {% else %}
+                <a class="btn btn-primary btn-sm" href="{{ url_for('surveys.take_survey', ts_id=s.ts.id) }}">Пройти опрос</a>
+              {% endif %}
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="empty-state">Сейчас нет активных опросов для ваших команд.</div>
+    {% endif %}
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-title">Последние уведомления</div>
+  {% if recent_notifications %}
+    <div>
+      {% for n in recent_notifications %}
+        <div class="notification {{ 'notification-unread' if not n.read }}">
+          <div class="notification-icon">{% if n.type in ('team_invite','join_request') %}✉{% elif 'report' in n.type %}📊{% elif n.type == 'survey_assigned' %}📋{% else %}🔔{% endif %}</div>
+          <div class="notification-content">
+            <div class="notification-title">{{ n.title }}</div>
+            <div class="notification-body">{{ n.body }}</div>
+          </div>
+          <div class="notification-time">{{ n.created_at.strftime('%d.%m %H:%M') }}</div>
+        </div>
+      {% endfor %}
+    </div>
+    <p class="mt-8"><a class="muted-link small" href="{{ url_for('notifications.list_notifications') }}">Все уведомления →</a></p>
+  {% else %}
+    <div class="empty-state">Уведомлений пока нет.</div>
+  {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+{% from "_macros.html" import disc_bar %}
+{% block title %}Командный отчет{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="page-title">Командный DISC-отчет</div>
+    <div class="subtitle">Опрос «{{ snapshot.title }}» · команда «{{ team.name }}»</div>
+  </div>
+  <a class="btn btn-secondary" href="{{ url_for('teams.team_detail', team_id=team.id) }}">← К команде</a>
+</div>
+
+<div class="grid-2">
+  <div class="card">
+    <div class="card-title">Средний профиль команды</div>
+    {% if team_report.participants_count %}
+      <p class="small muted" style="margin-bottom:14px;">Опрос прошли: {{ team_report.participants_count }} участник(ов)</p>
+      <div class="bars">
+        {% for letter, name in snapshot.scales.items() %}
+          {{ disc_bar(letter, name, team_report.avg_percent.get(letter, 0)) }}
+        {% endfor %}
+      </div>
+      {% if team_report.team_dominant_style %}
+        <hr class="divider">
+        <p class="small">
+          Командный профиль смещен к стилю
+          <strong>{{ team_report.team_dominant_style.name }} ({{ team_report.team_dominant }})</strong> —
+          {{ team_report.team_dominant_style.description }}
+        </p>
+      {% endif %}
+    {% else %}
+      <div class="empty-state">Ни один участник не прошел опрос — данных нет.</div>
+    {% endif %}
+  </div>
+
+  <div class="card">
+    <div class="card-title">Распределение доминирующих стилей</div>
+    {% if team_report.dominant_distribution %}
+      <div class="members-list">
+        {% for letter, name in snapshot.scales.items() %}
+          <div class="member-row">
+            <span style="display:flex;align-items:center;gap:10px;">
+              <span class="disc-letter disc-{{ letter }}">{{ letter }}</span>
+              {{ name }}
+            </span>
+            <span class="badge badge-member">{{ team_report.dominant_distribution.get(letter, 0) }} чел.</span>
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="empty-state">Нет данных.</div>
+    {% endif %}
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-title">Участники и их профили</div>
+  {% if team_report.members %}
+    <div class="table-wrap">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Участник</th>
+            {% for letter, name in snapshot.scales.items() %}<th>{{ letter }}</th>{% endfor %}
+            <th>Доминирующий стиль</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for member in team_report.members %}
+            <tr>
+              <td style="font-weight:600;">{{ member.display_name }}</td>
+              {% for letter, name in snapshot.scales.items() %}
+                <td>{{ member.percent.get(letter, 0) }}%</td>
+              {% endfor %}
+              <td>
+                {% if member.dominant %}
+                  <span class="disc-letter disc-{{ member.dominant }}" style="width:22px;height:22px;">{{ member.dominant }}</span>
+                  {{ snapshot.scales.get(member.dominant, member.dominant) }}
+                {% else %}—{% endif %}
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <div class="empty-state">Нет данных.</div>
+  {% endif %}
+</div>
+{% endblock %}

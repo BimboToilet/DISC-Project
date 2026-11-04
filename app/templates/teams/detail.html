@@ -1,0 +1,223 @@
+{% extends "base.html" %}
+{% block title %}{{ team.name }}{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="page-title" style="display:flex;align-items:center;gap:10px;">
+      {{ team.name }}
+      <span class="badge {{ 'badge-leader' if my_role == 'leader' else 'badge-member' }}">
+        {{ 'Вы — лидер' if my_role == 'leader' else 'Вы — участник' }}
+      </span>
+    </div>
+    {% if team.description %}<div class="subtitle">{{ team.description }}</div>{% endif %}
+  </div>
+  <div style="display:flex;gap:8px;">
+    {% if my_role != 'leader' %}
+    <form method="post" action="{{ url_for('teams.leave_team', team_id=team.id) }}"
+          onsubmit="return confirm('Покинуть команду «{{ team.name }}»?');">
+      <button class="btn btn-danger" type="submit">Покинуть команду</button>
+    </form>
+    {% endif %}
+    <a href="{{ url_for('teams.list_teams') }}" class="btn btn-secondary">Все команды</a>
+  </div>
+</div>
+
+<div class="grid-2 team-layout">
+  <div class="card" id="chat" data-team-id="{{ team.id }}">
+    <div class="card-title">Чат команды</div>
+    <div class="chat-box">
+      <div class="chat-messages" id="chat-messages">
+        {% for m in messages %}
+          {% include "teams/_chat_message.html" %}
+        {% else %}
+          <div class="empty-state">Сообщений пока нет — напишите первое.</div>
+        {% endfor %}
+      </div>
+      <form class="chat-input" id="chat-form" data-team-id="{{ team.id }}">
+        <input type="text" id="chat-input" placeholder="Сообщение..." autocomplete="off" maxlength="2000" required>
+        <button class="btn btn-primary" type="submit">Отправить</button>
+      </form>
+    </div>
+  </div>
+
+  <div>
+    <div class="card">
+      <div class="card-title">Участники ({{ members|length }})</div>
+      <div class="members-list">
+        {% for row in members %}
+          <div class="member-row">
+            <span style="display:flex;align-items:center;gap:10px;min-width:0;">
+              <span class="avatar">{{ row.u.display_name[:1] }}</span>
+              <span style="overflow:hidden;text-overflow:ellipsis;">{{ row.u.display_name }}</span>
+            </span>
+            <span style="display:flex;align-items:center;gap:8px;">
+              <span class="badge {{ 'badge-leader' if row.m.role == 'leader' else 'badge-member' }}">
+                {{ 'Лидер' if row.m.role == 'leader' else 'Участник' }}
+              </span>
+              {% if my_role == 'leader' and row.m.role != 'leader' %}
+              <form method="post" action="{{ url_for('teams.remove_member', team_id=team.id, user_id=row.u.id) }}"
+                    onsubmit="return confirm('Исключить {{ row.u.display_name }} из команды?');">
+                <button class="btn btn-ghost btn-sm" type="submit" title="Исключить">✕</button>
+              </form>
+              {% endif %}
+            </span>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    {% if my_role == 'leader' %}
+    <div class="card">
+      <div class="card-title">Управление командой</div>
+
+      {% if pending_requests %}
+        <div class="card-title" style="font-size:14px;">Заявки на вступление ({{ pending_requests|length }})</div>
+        {% for jr in pending_requests %}
+          <div class="member-row" style="flex-direction:column;align-items:stretch;gap:6px;border:1px solid var(--border);border-radius:8px;padding:10px;margin-bottom:8px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
+              <span style="font-weight:600;">{{ jr.user.display_name }}</span>
+              <span class="small muted">{{ jr.created_at.strftime('%d.%m %H:%M') }}</span>
+            </div>
+            {% if jr.message %}<div class="small muted">«{{ jr.message }}»</div>{% endif %}
+            <div style="display:flex;gap:8px;">
+              <form method="post" action="{{ url_for('teams.handle_request', team_id=team.id, request_id=jr.id, action='accept') }}">
+                <button class="btn btn-success btn-sm" type="submit">Принять</button>
+              </form>
+              <form method="post" action="{{ url_for('teams.handle_request', team_id=team.id, request_id=jr.id, action='decline') }}">
+                <button class="btn btn-secondary btn-sm" type="submit">Отклонить</button>
+              </form>
+            </div>
+          </div>
+        {% endfor %}
+      {% endif %}
+
+      <div class="card-title" style="font-size:14px;margin-top:14px;">Пригласить пользователей</div>
+      {% if invitable %}
+        <form method="post" action="{{ url_for('teams.invite_users', team_id=team.id) }}">
+          <div class="members-list" style="max-height:220px;overflow-y:auto;border:1px solid var(--border);border-radius:8px;padding:6px;">
+            {% for u in invitable %}
+              <label class="member-row" style="cursor:pointer;">
+                <span style="display:flex;align-items:center;gap:10px;">
+                  <input type="checkbox" name="user_ids" value="{{ u.id }}">
+                  <span class="avatar">{{ u.display_name[:1] }}</span>
+                  {{ u.display_name }}
+                </span>
+              </label>
+            {% endfor %}
+          </div>
+          <button class="btn btn-primary btn-sm mt-8" type="submit">Отправить приглашения</button>
+        </form>
+      {% else %}
+        <p class="small muted">Все зарегистрированные пользователи уже в команде.</p>
+      {% endif %}
+
+      {% if pending_invites %}
+        <p class="small muted mt-8">Ожидают ответа на приглашение: {{ pending_invites|map(attribute='invitee')|map(attribute='display_name')|join(', ') }}</p>
+      {% endif %}
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-title">DISC-опросы команды</div>
+
+  {% if active_info %}
+  <div class="card" style="background:var(--surface-2);margin-bottom:16px;">
+    <div class="card-title" style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;">
+      <span>Активный опрос: «{{ active_info.ts.survey_snapshot.title }}»</span>
+      <span class="badge badge-active">{% if active_info.ts.deadline %}дедлайн: {{ active_info.deadline }}{% else %}без дедлайна{% endif %}</span>
+    </div>
+    <p class="small muted">Прошли: {{ active_info.responded }} из {{ active_info.total }}</p>
+    <div class="mt-8" style="display:flex;gap:8px;flex-wrap:wrap;">
+      {% if active_info.answered_by_me %}
+        <span class="badge badge-finished">Вы уже прошли опрос</span>
+      {% else %}
+        <a class="btn btn-primary btn-sm" href="{{ url_for('surveys.take_survey', ts_id=active_info.ts.id) }}">Пройти опрос</a>
+      {% endif %}
+      {% if my_role == 'leader' %}
+        <form method="post" action="{{ url_for('surveys.stop_survey', team_id=team.id, ts_id=active_info.ts.id) }}"
+              onsubmit="return confirm('Прекратить опрос сейчас? Будут сформированы отчеты по текущим ответам.');">
+          <button class="btn btn-danger btn-sm" type="submit">Прекратить опрос</button>
+        </form>
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
+
+  {% if my_role == 'leader' %}
+    {% if not active_info %}
+    <details class="mt-8">
+      <summary style="cursor:pointer;font-weight:600;font-size:14px;">Назначить опрос команде</summary>
+      <div class="mt-16">
+        {% if my_surveys %}
+          <form method="post" action="{{ url_for('surveys.assign_survey', team_id=team.id) }}">
+            <div class="form-group">
+              <label for="survey_id">Опрос из вашей библиотеки</label>
+              <select id="survey_id" name="survey_id" required>
+                {% for s in my_surveys %}
+                  <option value="{{ s.id }}">{{ s.title }} ({{ s.data.questions|length }} вопр.)</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="deadline">Дедлайн (необязательно)</label>
+              <input type="datetime-local" id="deadline" name="deadline">
+              <div class="hint">Если дедлайн указан, опрос завершится автоматически. В любой момент его можно прекратить вручную.</div>
+            </div>
+            <button class="btn btn-primary" type="submit">Назначить опрос</button>
+          </form>
+        {% else %}
+          <p class="small muted">
+            В вашей библиотеке пока нет опросов.
+            <a class="muted-link" href="{{ url_for('surveys.library') }}">Загрузите DISC-опрос</a>, чтобы назначить его команде.
+          </p>
+        {% endif %}
+      </div>
+    </details>
+    {% else %}
+      <p class="small muted">Одновременно на команду активен только один опрос. Завершите текущий, чтобы назначить новый.</p>
+    {% endif %}
+  {% endif %}
+
+  <hr class="divider">
+  <div class="card-title" style="font-size:15px;">История опросов</div>
+  {% if history %}
+    <div class="table-wrap">
+      <table class="table">
+        <thead>
+          <tr><th>Опрос</th><th>Завершен</th><th>Причина</th><th>Прошли</th><th>Отчеты</th></tr>
+        </thead>
+        <tbody>
+          {% for ts in history %}
+            <tr>
+              <td style="font-weight:600;">{{ ts.survey_snapshot.title }}</td>
+              <td>{{ ts.finished_at.strftime('%d.%m.%Y %H:%M') if ts.finished_at }}</td>
+              <td>
+                {% if ts.finished_reason == 'manual' %}прекращен лидером
+                {% elif ts.finished_reason == 'deadline' %}по дедлайну
+                {% elif ts.finished_reason == 'completed' %}все участники прошли
+                {% else %}—{% endif %}
+              </td>
+              <td>{{ ts.results.personal|length if ts.results else 0 }}</td>
+              <td>
+                <div class="actions">
+                  <a class="btn btn-secondary btn-sm" href="{{ url_for('surveys.report_team', ts_id=ts.id) }}">Командный</a>
+                  {% if ts.results and ts.results.personal.get(user.id|string) %}
+                    <a class="btn btn-secondary btn-sm" href="{{ url_for('surveys.report_personal', ts_id=ts.id) }}">Мой отчет</a>
+                  {% endif %}
+                  {% if my_role == 'leader' %}
+                    <a class="btn btn-secondary btn-sm" href="{{ url_for('surveys.report_management', ts_id=ts.id) }}">Управленческий</a>
+                  {% endif %}
+                </div>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <div class="empty-state">Команда еще не проходила опросов.</div>
+  {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,16 @@
+services:
+  web-server:
+    build:
+      context: .
+      dockerfile: web-server
+    container_name: web-server
+    restart: unless-stopped
+    ports:
+      - "${PORT}:8000"
+    volumes:
+      - server_data:/data
+    environment:
+      - PORT=${PORT}
+
+volumes:
+  server_data:

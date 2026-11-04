@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% from "_macros.html" import disc_bar, style_card %}
+{% block title %}Персональный отчет{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="page-title">Персональный DISC-отчет</div>
+    <div class="subtitle">Опрос «{{ snapshot.title }}» · команда «{{ team.name }}» · {{ results.generated_at }}</div>
+  </div>
+  <a class="btn btn-secondary" href="{{ url_for('teams.team_detail', team_id=team.id) }}">← К команде</a>
+</div>
+
+<div class="grid-2">
+  <div>
+    {{ style_card(personal.style) }}
+    {% if personal.secondary_style %}
+    <div class="card" style="margin-bottom:12px;">
+      <div class="card-title" style="display:flex;align-items:center;gap:10px;">
+        <span class="disc-letter disc-{{ personal.secondary_style.letter }}">{{ personal.secondary_style.letter }}</span>
+        {{ personal.secondary_style.name }} — вторичный стиль
+      </div>
+      <p class="muted small">{{ personal.secondary_style.description }}</p>
+    </div>
+    {% endif %}
+    <div class="card">
+      <div class="card-title">Ваши ответы</div>
+      <p class="small muted">Отвечено на {{ personal.scores.answered }} из {{ personal.scores.total_questions }} вопросов · отправлено {{ personal.submitted_at }}</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Ваши баллы по шкалам</div>
+    <div class="bars">
+      {% for letter, name in snapshot.scales.items() %}
+        {{ disc_bar(letter, name, personal.scores.percent.get(letter, 0)) }}
+      {% endfor %}
+    </div>
+    <hr class="divider">
+    <div class="table-wrap">
+      <table class="table">
+        <thead><tr><th>Шкала</th><th>Баллы</th><th>Доля</th></tr></thead>
+        <tbody>
+          {% for letter, name in snapshot.scales.items() %}
+            <tr>
+              <td><span class="disc-letter disc-{{ letter }}" style="width:22px;height:22px;">{{ letter }}</span> {{ name }}</td>
+              <td>{{ personal.scores.raw.get(letter, 0) }}</td>
+              <td>{{ personal.scores.percent.get(letter, 0) }}%</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <p class="small muted mt-8">
+      Полный командный отчет доступен на странице команды (История опросов),
+      а сравнение с другими участниками — в командном отчете.
+    </p>
+    <a class="btn btn-secondary mt-8" href="{{ url_for('surveys.report_team', ts_id=ts.id) }}">Командный отчет →</a>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,16 @@
+{% set msg = m %}
+<div class="chat-msg {{ 'chat-msg-own' if msg.user_id == user.id else '' }} {{ 'chat-msg-system' if msg.kind == 'system' else '' }} {{ 'chat-msg-report' if msg.kind == 'report' else '' }}" data-msg-id="{{ msg.id }}">
+  {% if msg.kind == 'system' %}
+    <div class="chat-msg-body">{{ msg.body }}</div>
+  {% else %}
+    <div class="chat-msg-meta">
+      {% if msg.kind == 'report' %}🤖 Система{% else %}{{ msg.user.display_name if msg.user else 'Система' }}{% endif %}
+      · {{ msg.created_at.strftime('%d.%m %H:%M') if msg.created_at else '' }}
+    </div>
+    <div class="chat-msg-body">{{ msg.body }}
+      {% if msg.kind == 'report' and msg.meta and msg.meta.team_survey_id %}
+        <br><a class="muted-link" href="{{ url_for('surveys.report_team', ts_id=msg.meta.team_survey_id) }}">Открыть командный отчет →</a>
+      {% endif %}
+    </div>
+  {% endif %}
+</div>

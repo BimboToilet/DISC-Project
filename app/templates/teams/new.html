@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}Создание команды{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="page-title">Создание команды</div>
+    <div class="subtitle">Вы станете лидером этой команды и сможете приглашать в неё участников</div>
+  </div>
+  <a href="{{ url_for('teams.list_teams') }}" class="btn btn-secondary">← К списку команд</a>
+</div>
+
+<div class="grid-2">
+  <div class="card">
+    <form method="post">
+      <div class="form-group">
+        <label for="name">Название команды</label>
+        <input type="text" id="name" name="name" value="{{ name or '' }}" required>
+      </div>
+      <div class="form-group">
+        <label for="description">Описание (необязательно)</label>
+        <textarea id="description" name="description" style="min-height:90px;">{{ description or '' }}</textarea>
+      </div>
+      <button type="submit" class="btn btn-primary">Создать команду</button>
+    </form>
+  </div>
+
+  <div class="card">
+    <form method="post">
+      <div class="card-title">Пригласить участников (необязательно)</div>
+      <p class="small muted" style="margin-bottom:12px;">
+        Выбранные пользователи получат приглашение и смогут принять его через окно уведомлений.
+        Пригласить можно и позже — со страницы команды.
+      </p>
+      {% if all_users %}
+        <div class="members-list" style="max-height:320px;overflow-y:auto;">
+          {% for u in all_users %}
+            <label class="member-row" style="cursor:pointer;">
+              <span style="display:flex;align-items:center;gap:10px;">
+                <input type="checkbox" name="invite_user_ids" value="{{ u.id }}">
+                <span class="avatar">{{ u.display_name[:1] }}</span>
+                {{ u.display_name }} <span class="small muted">( {{ u.username }} )</span>
+              </span>
+            </label>
+          {% endfor %}
+        </div>
+        <div class="hint">Форма отправит и название, и приглашения вместе.</div>
+      {% else %}
+        <div class="empty-state">Пока нет других зарегистрированных пользователей, которых можно пригласить.</div>
+      {% endif %}
+    </form>
+  </div>
+</div>
+{% endblock %}

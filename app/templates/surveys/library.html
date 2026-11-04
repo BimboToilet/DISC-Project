@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+{% block title %}Мои опросы{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="page-title">Библиотека DISC-опросов</div>
+    <div class="subtitle">Загрузите опрос в формате JSON — на его основе система автоматически рассчитает баллы DISC</div>
+  </div>
+  <a href="#" class="btn btn-secondary" id="toggle-upload">Загрузить опрос</a>
+</div>
+
+<div class="card" id="upload-card" style="display:none;">
+  <div class="card-title">Загрузка нового опроса</div>
+  <form method="post" action="{{ url_for('surveys.upload') }}" enctype="multipart/form-data">
+    <div class="form-group">
+      <label for="file">Файл JSON</label>
+      <input type="file" id="file" name="file" accept=".json,application/json">
+      <div class="hint">…или вставьте JSON в поле ниже (достаточно одного из способов).</div>
+    </div>
+    <div class="form-group">
+      <label for="json_text">JSON опроса</label>
+      <textarea id="json_text" name="json_text" placeholder='{"title": "...", "scales": {...}, "questions": [...]}'></textarea>
+    </div>
+    <button class="btn btn-primary" type="submit">Загрузить</button>
+  </form>
+  <hr class="divider">
+  <details>
+    <summary class="small muted" style="cursor:pointer;">Формат опроса (пример)</summary>
+    <pre class="small mt-8" style="background:var(--surface-2);border:1px solid var(--border);border-radius:8px;padding:12px;overflow-x:auto;">{
+  "title": "Мой DISC-опрос",
+  "description": "Необязательное описание",
+  "scales": {
+    "D": "Доминирование",
+    "I": "Влияние",
+    "S": "Постоянство",
+    "C": "Соответствие"
+  },
+  "questions": [
+    {
+      "id": "q1",
+      "text": "Я люблю брать инициативу в свои руки",
+      "options": [
+        {"text": "Полностью согласен", "scores": {"D": 2, "I": 1}},
+        {"text": "Скорее не согласен", "scores": {"S": 2, "C": 1}}
+      ]
+    }
+  ]
+}</pre>
+    <p class="small muted mt-8">За каждый выбранный вариант начисляются баллы по шкалам из поля "scores". Шкалы можно задавать любые — алгоритм расчета универсальный.</p>
+  </details>
+</div>
+
+<div class="card">
+  <div class="card-title">Мои опросы ({{ surveys|length }})</div>
+  {% if surveys %}
+    <div class="table-wrap">
+      <table class="table">
+        <thead>
+          <tr><th>Название</th><th>Вопросов</th><th>Загружен</th><th>Действия</th></tr>
+        </thead>
+        <tbody>
+          {% for s in surveys %}
+            <tr>
+              <td style="font-weight:600;">
+                <a class="muted-link" href="{{ url_for('surveys.survey_detail', survey_id=s.id) }}">{{ s.title }}</a>
+                {% if s.description %}<div class="small muted">{{ s.description[:70] }}</div>{% endif %}
+              </td>
+              <td>{{ s.data.questions|length }}</td>
+              <td>{{ s.created_at.strftime('%d.%m.%Y') }}</td>
+              <td>
+                <div class="actions">
+                  <a class="btn btn-secondary btn-sm" href="{{ url_for('surveys.survey_detail', survey_id=s.id) }}">Просмотр</a>
+                  <form method="post" action="{{ url_for('surveys.delete_survey', survey_id=s.id) }}"
+                        onsubmit="return confirm('Удалить опрос «{{ s.title }}» из библиотеки?');">
+                    <button class="btn btn-danger btn-sm" type="submit">Удалить</button>
+                  </form>
+                </div>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <div class="empty-state">
+      Библиотека пуста. Загрузите первый DISC-опрос в формате JSON —<br>
+      после этого его можно будет назначать командам, где вы лидер.
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}Прохождение опроса{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="page-title">Опрос: «{{ survey.title }}»</div>
+    <div class="subtitle">
+      Команда «{{ team.name }}»
+      {% if ts.deadline %} · дедлайн: {{ ts.deadline.strftime('%d.%m.%Y %H:%M') }}{% endif %}
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  {% if survey.description %}<p class="muted small" style="margin-bottom:16px;">{{ survey.description }}</p>{% endif %}
+  <form method="post" id="take-form">
+    {% for q in survey.questions %}
+      <div class="take-question">
+        <div class="take-q-title">{{ loop.index }}. {{ q.text }}</div>
+        <div class="take-options">
+          {% for opt in q.options %}
+            <label class="take-option">
+              <input type="radio" name="q_{{ q.id }}" value="{{ loop.index0 }}" required>
+              {{ opt.text }}
+            </label>
+          {% endfor %}
+        </div>
+      </div>
+    {% endfor %}
+    <div class="mt-16" style="display:flex;gap:8px;">
+      <button class="btn btn-primary" type="submit">Отправить ответы</button>
+      <a class="btn btn-secondary" href="{{ url_for('teams.team_detail', team_id=team.id) }}">Отмена</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

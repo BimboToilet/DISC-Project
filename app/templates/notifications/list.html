@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block title %}Уведомления{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="page-title">Уведомления</div>
+    <div class="subtitle">Приглашения, заявки, назначения опросов и отчеты</div>
+  </div>
+</div>
+
+<div class="card">
+  {% if items %}
+    {% for n in items %}
+      {% set payload = n.payload or {} %}
+      <div class="notification {{ 'notification-unread' if not n.read }}">
+        <div class="notification-icon">
+          {% if n.type == 'team_invite' %}✉
+          {% elif n.type == 'join_request' %}✉
+          {% elif n.type == 'survey_assigned' %}📋
+          {% elif n.type == 'personal_report' %}📊
+          {% elif n.type == 'management_report' %}📈
+          {% else %}🔔{% endif %}
+        </div>
+        <div class="notification-content">
+          <div class="notification-title">{{ n.title }}</div>
+          <div class="notification-body">{{ n.body }}</div>
+
+          <div class="notification-actions">
+            {% if n.type == 'team_invite' and not payload.handled %}
+              <form method="post" action="{{ url_for('notifications.handle_action', notification_id=n.id, action='accept') }}">
+                <button class="btn btn-success btn-sm" type="submit">Принять приглашение</button>
+              </form>
+              <form method="post" action="{{ url_for('notifications.handle_action', notification_id=n.id, action='decline') }}">
+                <button class="btn btn-secondary btn-sm" type="submit">Отклонить</button>
+              </form>
+            {% elif n.type == 'join_request' and not payload.handled %}
+              <form method="post" action="{{ url_for('notifications.handle_action', notification_id=n.id, action='accept') }}">
+                <button class="btn btn-success btn-sm" type="submit">Принять в команду</button>
+              </form>
+              <form method="post" action="{{ url_for('notifications.handle_action', notification_id=n.id, action='decline') }}">
+                <button class="btn btn-secondary btn-sm" type="submit">Отклонить</button>
+              </form>
+            {% elif n.type == 'survey_assigned' and payload.team_survey_id %}
+              <a class="btn btn-primary btn-sm" href="{{ url_for('surveys.take_survey', ts_id=payload.team_survey_id) }}">Пройти опрос</a>
+              <a class="btn btn-secondary btn-sm" href="{{ url_for('teams.team_detail', team_id=payload.team_id) }}">К команде</a>
+            {% elif n.type == 'personal_report' and payload.team_survey_id %}
+              <a class="btn btn-primary btn-sm" href="{{ url_for('surveys.report_personal', ts_id=payload.team_survey_id) }}">Открыть персональный отчет</a>
+            {% elif n.type == 'management_report' and payload.team_survey_id %}
+              <a class="btn btn-primary btn-sm" href="{{ url_for('surveys.report_management', ts_id=payload.team_survey_id) }}">Открыть управленческий отчет</a>
+            {% elif n.type == 'info' and payload.team_id %}
+              <a class="btn btn-secondary btn-sm" href="{{ url_for('teams.team_detail', team_id=payload.team_id) }}">К команде</a>
+            {% endif %}
+          </div>
+        </div>
+        <div class="notification-time">{{ n.created_at.strftime('%d.%m.%Y %H:%M') }}</div>
+      </div>
+    {% endfor %}
+  {% else %}
+    <div class="empty-state">Уведомлений пока нет.</div>
+  {% endif %}
+</div>
+{% endblock %}

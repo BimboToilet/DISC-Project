@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}{{ survey.title }}{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="page-title">{{ survey.title }}</div>
+    {% if survey.description %}<div class="subtitle">{{ survey.description }}</div>{% endif %}
+  </div>
+  <a href="{{ url_for('surveys.library') }}" class="btn btn-secondary">← К библиотеке</a>
+</div>
+
+<div class="grid-2">
+  <div class="card">
+    <div class="card-title">Вопросы ({{ survey.data.questions|length }})</div>
+    {% for q in survey.data.questions %}
+      <div class="take-question">
+        <div class="take-q-title">{{ loop.index }}. {{ q.text }}</div>
+        <div class="take-options">
+          {% for opt in q.options %}
+            <div class="take-option" style="cursor:default;">
+              <span class="disc-letter" style="width:20px;height:20px;font-size:11px;">{{ loop.index }}</span>
+              {{ opt.text }}
+              <span class="small muted">({% for l, v in opt.scores.items() %}{{ l }}:{{ v }}{{ ', ' if not loop.last else '' }}{% endfor %})</span>
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+
+  <div class="card">
+    <div class="card-title">Шкалы оценивания</div>
+    <div class="members-list">
+      {% for letter, name in survey.data.scales.items() %}
+        <div class="member-row">
+          <span style="display:flex;align-items:center;gap:10px;">
+            <span class="disc-letter disc-{{ letter }}">{{ letter }}</span>
+            {{ name }}
+          </span>
+        </div>
+      {% endfor %}
+    </div>
+    <hr class="divider">
+    <p class="small muted">
+      Этот опрос можно назначить любой команде, где вы лидер: на странице команды
+      нажмите «Назначить опрос команде». Единовременно на команду активен один опрос.
+    </p>
+  </div>
+</div>
+{% endblock %}

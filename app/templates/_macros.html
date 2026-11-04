@@ -1,0 +1,24 @@
+{% macro disc_bar(letter, name, value, max_value=100) %}
+<div class="bar-row">
+  <div class="bar-label">
+    <span class="disc-letter disc-{{ letter }}">{{ letter }}</span>
+    <span class="bar-label-name">{{ name }}</span>
+  </div>
+  <div class="bar-track">
+    <div class="bar-fill disc-avg-{{ letter }}" style="width: {{ (value if value < max_value else max_value) / max_value * 100 }}%; background: currentColor; opacity: .85;"></div>
+  </div>
+  <div class="bar-value">{{ value }}{% if max_value == 100 %}%{% endif %}</div>
+</div>
+{% endmacro %}
+
+{% macro style_card(style) %}
+{% if style %}
+<div class="card" style="margin-bottom: 12px;">
+  <div class="card-title" style="display:flex;align-items:center;gap:10px;">
+    <span class="disc-letter disc-{{ style.letter }}">{{ style.letter }}</span>
+    {{ style.name }} — ваш доминирующий стиль
+  </div>
+  <p class="muted small">{{ style.description }}</p>
+</div>
+{% endif %}
+{% endmacro %}

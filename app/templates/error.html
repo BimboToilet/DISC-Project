@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}Ошибка {{ code }}{% endblock %}
+{% block content %}
+<div class="card" style="max-width:560px;margin:8vh auto 0;text-align:center;">
+  <div class="page-title">{{ code }}</div>
+  {% if code == 404 %}
+    <p class="muted">Страница не найдена.</p>
+  {% else %}
+    <p class="muted">Доступ запрещен или произошла ошибка.</p>
+  {% endif %}
+  <p class="mt-16"><a class="btn btn-primary" href="{{ url_for('teams.dashboard') if user else url_for('auth.login') }}">На главную</a></p>
+</div>
+{% endblock %}

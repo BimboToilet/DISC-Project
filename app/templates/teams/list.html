@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}Команды{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="page-title">Команды компании</div>
+    <div class="subtitle">Можно подать заявку на вступление в любую команду или создать свою</div>
+  </div>
+  <a href="{{ url_for('teams.create_team') }}" class="btn btn-primary">+ Создать команду</a>
+</div>
+
+<div class="card">
+  <div class="table-wrap">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Команда</th>
+          <th>Лидер</th>
+          <th>Участников</th>
+          <th>Моя роль</th>
+          <th>Действия</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in rows %}
+        <tr>
+          <td>
+            <a class="muted-link" style="font-weight:600;" href="{{ url_for('teams.team_detail', team_id=row.team.id) if row.my_role else url_for('teams.list_teams') }}">
+              {{ row.team.name }}
+            </a>
+            {% if row.team.description %}<div class="small muted">{{ row.team.description[:80] }}</div>{% endif %}
+          </td>
+          <td>{{ row.team.leader.display_name }}</td>
+          <td>{{ row.members }}</td>
+          <td>
+            {% if row.my_role == 'leader' %}<span class="badge badge-leader">Лидер</span>
+            {% elif row.my_role %}<span class="badge badge-member">Участник</span>
+            {% elif row.pending_request %}<span class="badge badge-pending">Заявка отправлена</span>
+            {% else %}<span class="muted small">—</span>{% endif %}
+          </td>
+          <td>
+            <div class="actions">
+              {% if row.my_role %}
+                <a class="btn btn-secondary btn-sm" href="{{ url_for('teams.team_detail', team_id=row.team.id) }}">Открыть</a>
+              {% elif row.pending_request %}
+                <form method="post" action="{{ url_for('teams.cancel_apply', team_id=row.team.id) }}">
+                  <button class="btn btn-danger btn-sm" type="submit">Отменить заявку</button>
+                </form>
+              {% else %}
+                <form method="post" action="{{ url_for('teams.apply_to_team', team_id=row.team.id) }}" style="display:flex;gap:8px;">
+                  <input type="text" name="message" placeholder="Сообщение лидеру (необязательно)" style="width:220px;">
+                  <button class="btn btn-primary btn-sm" type="submit">Подать заявку</button>
+                </form>
+              {% endif %}
+            </div>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="5"><div class="empty-state">Пока нет ни одной команды — создайте первую.</div></td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

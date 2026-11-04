@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% from "_macros.html" import disc_bar %}
+{% block title %}Управленческий отчет{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="page-title">Управленческий отчет (для лидера)</div>
+    <div class="subtitle">Опрос «{{ snapshot.title }}» · команда «{{ team.name }}»</div>
+  </div>
+  <a class="btn btn-secondary" href="{{ url_for('teams.team_detail', team_id=team.id) }}">← К команде</a>
+</div>
+
+<div class="grid-2">
+  <div class="card">
+    <div class="card-title">Средний профиль команды</div>
+    {% if report.participants_count %}
+      <div class="bars">
+        {% for letter, name in snapshot.scales.items() %}
+          {{ disc_bar(letter, name, report.avg_percent.get(letter, 0)) }}
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="empty-state">Нет данных.</div>
+    {% endif %}
+  </div>
+
+  <div class="card">
+    <div class="card-title">Аналитика и рекомендации</div>
+    {% if report.insights %}
+      {% for ins in report.insights %}
+        <div class="insight-item">{{ ins }}</div>
+      {% endfor %}
+    {% else %}
+      <div class="empty-state">Нет наблюдений.</div>
+    {% endif %}
+    {% if report.non_participants %}
+      <p class="small muted mt-8">Не прошли опрос: {{ report.non_participants|join(', ') }}</p>
+    {% endif %}
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-title">Детальный разбор по участникам</div>
+  {% if report.members %}
+    <div class="table-wrap">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Участник</th>
+            {% for letter, name in snapshot.scales.items() %}<th>{{ letter }} %</th>{% endfor %}
+            <th>Доминир.</th><th>Вторичный</th>
+            {% for letter, name in snapshot.scales.items() %}<th>Δ{{ letter }}</th>{% endfor %}
+          </tr>
+        </thead>
+        <tbody>
+          {% for m in report.members %}
+            <tr>
+              <td>
+                <span style="font-weight:600;">{{ m.display_name }}</span>
+                <div class="small muted">{{ m.submitted_at }}</div>
+              </td>
+              {% for letter, name in snapshot.scales.items() %}
+                <td>{{ m.percent.get(letter, 0) }}</td>
+              {% endfor %}
+              <td>
+                {% if m.dominant %}<span class="disc-letter disc-{{ m.dominant }}" style="width:22px;height:22px;">{{ m.dominant }}</span>{% else %}—{% endif %}
+              </td>
+              <td>{{ m.secondary or '—' }}</td>
+              {% for letter, name in snapshot.scales.items() %}
+                <td class="small">{{ m.vs_avg.get(letter, 0) }}</td>
+              {% endfor %}
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <p class="hint">Δ — отклонение доли шкалы участника от командного среднего, в процентных пунктах.</p>
+  {% else %}
+    <div class="empty-state">Ни один участник не прошел опрос.</div>
+  {% endif %}
+</div>
+{% endblock %}
