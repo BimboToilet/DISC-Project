@@ -178,7 +178,7 @@ def main():
 
     db_path = os.path.join(
         os.environ.get("DATA_DIR", os.path.join(os.path.dirname(__file__), "..", "data")),
-        "disc.db",
+        "data.db",
     )
     con = _sqlite3.connect(db_path)
     con.execute("update team_surveys set deadline = ? where id = ?", ("2000-01-01 00:00:00", ts3))
@@ -206,7 +206,7 @@ def get_user_id(client, username="boris"):
     path = os.environ.get(
         "DATA_DIR", os.path.join(os.path.dirname(__file__), "..", "data")
     )
-    con = sqlite3.connect(os.path.join(path, "disc.db"))
+    con = sqlite3.connect(os.path.join(path, "data.db"))
     row = con.execute("select id from users where username=?", (username,)).fetchone()
     return row[0] if row else 0
 

@@ -2,10 +2,6 @@
 {% block title %}Главная{% endblock %}
 {% block content %}
 <div class="page-header">
-  <div>
-    <div class="page-title">Привет, {{ user.display_name }}</div>
-    <div class="subtitle">Ваши команды, активные опросы и последние уведомления</div>
-  </div>
   <div style="display:flex;gap:8px;">
     <a href="{{ url_for('teams.create_team') }}" class="btn btn-primary">+ Создать команду</a>
     <a href="{{ url_for('teams.list_teams') }}" class="btn btn-secondary">Все команды</a>

@@ -10,6 +10,9 @@ from .models import db
 def create_app() -> Flask:
     app = Flask(__name__)
 
+    app.jinja_env.trim_blocks = True
+    app.jinja_env.lstrip_blocks = True
+
     base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     data_dir = os.environ.get("DATA_DIR", os.path.join(base_dir, "data"))
     os.makedirs(data_dir, exist_ok=True)
